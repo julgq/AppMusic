@@ -8,7 +8,8 @@ import React, { Component } from 'react';
 import {
   StyleSheet,
   View,
-  Text
+  Text,
+  Button
 } from 'react-native';
 
 import FBSDK, {
@@ -59,6 +60,7 @@ export default class LoginView extends Component {
       firebaseAuth.signInWithCredential(credential).then((credentials) => {
         console.warn("Sign In Sucess", credentials);
         this.setState({ credentials })
+        Actions.home()
       }, function(error){
         console.warn("Sign In Error", error);
       });
@@ -75,6 +77,7 @@ handleLoginFinished = (error, result) => {
       this.authenticateUser()
   }
 }
+
 
   render() {
     return (
@@ -104,6 +107,7 @@ handleLoginFinished = (error, result) => {
       <View style={styles.container}>
       <Text style={styles.welcome}>Bienvenidos a AppMusic</Text>
       <Text style={styles.welcome}>{this.state.credentials && this.state.credentials.displayName}</Text>
+
         <LoginButton
           publishPermissions={["publish_actions"]}
           readPermissions={['public_profile','email']}
