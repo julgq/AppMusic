@@ -15,4 +15,4 @@ function getArtists(){
 }
 
 
-export { getArtists } 
+export { getArtists }
