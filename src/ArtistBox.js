@@ -20,11 +20,26 @@ import { firebaseDatabase, firebaseAuth } from './firebase'
 export default class ArtistBox extends Component {
 
 state = {
-  liked: false
+  liked: false,
+  likeCount: 0
+}
+
+
+// Call before component is ready
+componentWillMount() {
+  const { uid } = firebaseAuth.currentUser
+  this.getArtistRef().on('value', snapshot => {
+    const artist = snapshot.val()
+    if (artist){
+      this.setState({
+        likeCount: artist.likeCount,
+        liked: artist.likes && artist.likes[uid]
+      })
+    }
+  })
 }
 
   handlePress = () => {
-    this.setState({ liked: !this.state.liked})
     this.togglelike(!this.state.liked)
   }
 
@@ -67,6 +82,8 @@ state = {
       <Icon name="ios-heart" size={30} color="#e74c3c" /> :
       <Icon name="ios-heart-outline" size={30} color="gray" />
 
+      const { likeCount } = this.state
+
 
 
      /* El nombre viene de this.props.artist */
@@ -82,7 +99,7 @@ state = {
               <TouchableOpacity onPress={this.handlePress}>
                 { likeIcon }
               </TouchableOpacity>
-                <Text style={styles.count}>{likes}</Text>
+                <Text style={styles.count}>{likeCount}</Text>
               </View>
               <View style={styles.iconContainer}>
                 <Icon name="ios-chatboxes-outline" size={30} color="gray" />
