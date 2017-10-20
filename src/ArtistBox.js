@@ -1,9 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
-
 import React, { Component } from 'react';
 import {
   StyleSheet,
@@ -14,145 +8,148 @@ import {
 } from 'react-native';
 
 import Icon from 'react-native-vector-icons/Ionicons'
-
-import { firebaseDatabase, firebaseAuth } from './firebase'
+import { firebaseAuth, firebaseDatabase } from './firebase'
 
 export default class ArtistBox extends Component {
 
-state = {
-  liked: false,
-  likeCount: 0
-}
+  state = {
+    liked: null,
+    likeCount: null,
+  }
 
+  componentWillMount() {
+    this.getArtistRef().on('value', this.handleArtistOnValue)
+  }
 
-// Call before component is ready
-componentWillMount() {
-  const { uid } = firebaseAuth.currentUser
-  this.getArtistRef().on('value', snapshot => {
+  componentWillUnmount() {
+    this.getArtistRef().off('value', this.handleArtistOnValue)
+  }
+
+  handleArtistOnValue = snapshot => {
+    const userId = firebaseAuth.currentUser.uid
+
     const artist = snapshot.val()
-    if (artist){
-      this.setState({
-        likeCount: artist.likeCount,
-        liked: artist.likes && artist.likes[uid]
-      })
+
+    if (!artist) {
+      return this.getArtistRef().set({ likeCount: 0 })
     }
-  })
-}
 
-  handlePress = () => {
-    this.togglelike(!this.state.liked)
+    const likeCount = artist.likeCount
+    const liked = artist.likes && artist.likes[userId]
+
+    this.setState({ liked, likeCount })
   }
 
+  handleToggleLikeButtonPress = () => {
+    const { likeCount, liked } = this.state
 
-  getArtistRef = () => {
-    const { id } = this.props.artist
-    return firebaseDatabase.ref(`artist/${id}`)
+    if (this.busy || likeCount === null || liked === null) {
+      return
+    }
+
+    this.busy = true
+
+    const userId = firebaseAuth.currentUser.uid
+
+    this.getArtistRef().transaction(artist => {
+      if (artist) {
+        if (artist.likes && artist.likes[userId]) {
+          artist.likeCount--
+          artist.likes[userId] = null
+        } else {
+          artist.likeCount++
+          if (!artist.likes) {
+            artist.likes = {}
+          }
+          artist.likes[userId] = true
+        }
+      }
+
+      return artist
+    })
+    .then(() => this.busy = false)
   }
 
-  togglelike = (liked) => {
-    const { uid } = firebaseAuth.currentUser
-            this.getArtistRef().transaction(function(artist) {
-            if (artist) {
-              if (artist.likes && artist.likes[uid]) {
-                artist.likeCount--;
-                artist.likes[uid] = null;
-              } else {
-                artist.likeCount++;
-                if (!artist.likes) {
-                  artist.likes = {};
-                }
-                artist.likes[uid] = true;
-              }
-            }
-            return artist  || {
-              likeCount : 1,
-              likes: {
-                [uid]: true
-              }
-            };
+  getArtistRef() {
+    const artistId = this.props.artist.id
 
-          });
-
+    return firebaseDatabase.ref(`artists/${artistId}`)
   }
 
   render() {
-
-    const { image, name, likes, comments } = this.props.artist
-    const likeIcon = this.state.liked ?
-      <Icon name="ios-heart" size={30} color="#e74c3c" /> :
+    const { image, name, comments } = this.props.artist
+    const { likeCount, liked } = this.state
+    const likeIcon = liked ?
+      <Icon name="ios-heart" size={32} color="#e74c3c" /> :
       <Icon name="ios-heart-outline" size={30} color="gray" />
 
-      const { likeCount } = this.state
-
-
-
-     /* El nombre viene de this.props.artist */
-     // console.warn('El nombre', this.props.artist.name)
-
     return (
-        <View style={styles.artistBox}>
-          <Image style={styles.image} source={{ uri: image }} />
-          <View style={styles.info}>
-            <Text style={styles.name}>{name}</Text>
-            <View style={styles.row}>
-              <View style={styles.iconContainer}>
-              <TouchableOpacity onPress={this.handlePress}>
-                { likeIcon }
+      <View style={styles.artistBox}>
+        <Image style={styles.image} source={{ uri: image }} />
+
+        <View style={styles.info}>
+          <Text style={styles.name}>{name}</Text>
+
+          <View style={styles.centeredRow}>
+            <View style={styles.iconContainer}>
+              <TouchableOpacity onPress={this.handleToggleLikeButtonPress}>
+                {likeIcon}
               </TouchableOpacity>
-                <Text style={styles.count}>{likeCount}</Text>
-              </View>
-              <View style={styles.iconContainer}>
-                <Icon name="ios-chatboxes-outline" size={30} color="gray" />
-                <Text style={styles.count}>{comments}</Text>
-              </View>
+
+              <Text style={styles.iconText}>{likeCount}</Text>
+            </View>
+
+            <View style={styles.iconContainer}>
+              <Icon name="ios-chatboxes-outline" size={32} color="gray" />
+              <Text style={styles.iconText}>{comments}</Text>
             </View>
           </View>
         </View>
-
+      </View>
     );
   }
 }
 
-/* shadow solo funciona con ios, y elevation con android */
-
 const styles = StyleSheet.create({
   artistBox: {
-    margin: 5,
-    backgroundColor: 'white',
+    backgroundColor: '#F5FCFF',
     flexDirection: 'row',
     shadowColor: 'black',
-    shadowOpacity: .9,
     shadowOffset: {
       height: 1,
       width: -2,
     },
-    elevation: 4,
+    shadowRadius: 1,
+    shadowOpacity: .5,
+    marginHorizontal: 8,
+    marginBottom: 8,
+    elevation: 2,
   },
   image: {
     width: 150,
     height: 150,
   },
   info: {
-    flex: 2,
-    flexDirection: 'column',
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   name: {
     fontSize: 20,
-    marginTop: 50,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 15,
     color: '#333'
   },
-  row: {
+  centeredRow: {
     flexDirection: 'row',
-    marginHorizontal: 30,
-    marginTop: 15
+    marginHorizontal: 40,
   },
   iconContainer: {
     flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  count: {
-    color: 'gray'
+  iconText: {
+    color: 'gray',
   }
 });

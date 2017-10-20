@@ -1,70 +1,65 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
-
 import React, { Component } from 'react';
 import {
-  StyleSheet,
   ListView,
+  ActivityIndicator,
+  StyleSheet,
   TouchableOpacity,
 } from 'react-native';
 
-import ArtistBox from './ArtistBox'
 import { Actions } from 'react-native-router-flux'
 
-export default class ArtistList extends Component {
+import ArtistBox from './ArtistBox'
 
+export default class ArtistList extends Component {
   constructor(props) {
-    super(props);
-    const ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => {
-      r1 !== r2
-    }})
+    super();
     this.state = {
-      dataSource: ds
-    }
+      artistDataSource: new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2})
+    };
+  }
+
+  updateDataSource(newData) {
+    this.setState({
+      artistDataSource: this.state.artistDataSource.cloneWithRows(newData)
+    })
   }
 
   componentDidMount() {
     this.updateDataSource(this.props.artists)
   }
 
-  componentWillReceiveProps(newProps) {
-    if (newProps.artists !== this.props.artists) {
-      this.updateDataSource(newProps.artists)
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.artists !== this.props.artists) {
+      this.updateDataSource(nextProps.artists)
     }
   }
 
-  updateDataSource = (data) => {
-    this.setState({
-      dataSource: this.state.dataSource.cloneWithRows(data)
-    })
-  }
-
-  handlePress(artist) {
+  handleBoxPress(artist) {
     Actions.artistDetail({ artist })
   }
 
   render() {
+    if (this.props.artists.length === 0) {
+      return <ActivityIndicator color="black" size="large" style={styles.loading} />
+    }
+
     return (
       <ListView
         enableEmptySections={true}
-        dataSource={this.state.dataSource}
-        renderRow={(artist) => {
-          return <TouchableOpacity onPress={() => this.handlePress(artist)}>
-            <ArtistBox artist={artist} />
-          </TouchableOpacity>
-        }}
+        dataSource={this.state.artistDataSource}
+        renderRow={
+          artist =>
+            <TouchableOpacity onPress={() => this.handleBoxPress(artist)}>
+              <ArtistBox artist={artist} />
+            </TouchableOpacity>
+        }
       />
     );
   }
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'lightgray',
-    paddingTop: 50,
-  },
-});
+  loading: {
+    marginTop: 20,
+  }
+})

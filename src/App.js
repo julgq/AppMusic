@@ -21,15 +21,14 @@
 
  class AppMusic extends React.Component {
    render() {
-     const isAndroid = Platform.OS === 'android'
 
      return (
        <Router>
 
         <Scene key="root" hideNavBar type="replace">
-           <Scene key="login" component={LoginView} hideNavBar />
-           <Scene key="home" component={HomeView} />
-           <Scene key="artistDetail" component={ArtistDetailView} hideNavBar={isAndroid} />
+           <Scene key="login" component={LoginView}  />
+           <Scene key="home" component={HomeView} title="Home" hideNavBar={false} />
+           <Scene key="artistDetail" component={ArtistDetailView} title="Comentarios" hideNavBar={false}/>
          </Scene>
        </Router>
        )
