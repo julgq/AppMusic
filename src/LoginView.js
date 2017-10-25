@@ -97,7 +97,7 @@ handleLoginFinished = (error, result) => {
         <Image source={require('./logo.png')} style={styles.logo} />
         <Text style={styles.welcome}>Bienvenidos a AppMusic</Text>
         <Text style={styles.welcome}>{this.state.credentials && this.state.credentials.displayName}</Text>
-
+        
         <LoginButton
           publishPermissions={["publish_actions"]}
           readPermissions={['public_profile','email']}
